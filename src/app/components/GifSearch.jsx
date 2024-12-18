@@ -10,6 +10,8 @@ export default function GifSearch() {
   const [selectedGif, setSelectedGif] = useState(null); // Выбранная гифка
   const [offset, setOffset] = useState(0); // Смещение для пагинации
   const [loading, setLoading] = useState(false); // Состояние загрузки
+  const [sentTime, setSentTime] = useState(null); // Время отправки
+  const [isChatMode, setIsChatMode] = useState(false); // Режим чата
 
   // Загрузка гифок при изменении запроса или смещения
   useEffect(() => {
@@ -18,14 +20,11 @@ export default function GifSearch() {
         const searchTerm = query.slice(5);
         setLoading(true);
 
-        // Загрузка гифок с учетом смещения
         const results = await searchGifs(searchTerm, offset);
 
         if (offset === 0) {
-          // Если это первый запрос, очищаем старые гифки
           setGifs(results);
         } else {
-          // Добавляем новые гифки к уже загруженным
           setGifs((prevGifs) => [...prevGifs, ...results]);
         }
 
@@ -34,7 +33,7 @@ export default function GifSearch() {
       } else {
         setShowResults(false);
         setGifs([]);
-        setOffset(0); // Сброс смещения, если нет запроса
+        setOffset(0);
       }
     };
 
@@ -44,78 +43,106 @@ export default function GifSearch() {
   // Обработчик клика по гифке
   const handleGifClick = (gif) => {
     setSelectedGif(gif);
+    setShowResults(false);
+    setSentTime(new Date().toLocaleTimeString());
+    setIsChatMode(true); // Включаем режим чата
+    setQuery(""); // Очищаем строку поиска
   };
 
   // Обработчик кнопки "Показать больше"
   const handleShowMore = () => {
-    setOffset((prevOffset) => prevOffset + 9); // Увеличиваем смещение на 9
+    setOffset((prevOffset) => prevOffset + 9);
   };
 
   // При изменении запроса сбрасываем гифки и смещение
   const handleQueryChange = (e) => {
     setQuery(e.target.value);
-    setGifs([]); // Очищаем гифки при смене запроса
-    setOffset(0); // Сбрасываем смещение
+    setGifs([]);
+    setOffset(0);
+    setSelectedGif(null);
+    setSentTime(null);
+    setIsChatMode(false); // Сбрасываем режим чата, если пользователь снова ищет гифки
+  };
+
+  const renderQueryText = (query) => {
+    // Проверяем, начинается ли текст с "/gif"
+    if (query.startsWith("/gif")) {
+      const gifText = query.slice(0, 5); // "/gif"
+      const restText = query.slice(4); // Остальной текст
+      return (
+        <span>
+          <span style={{ background: "linear-gradient(to right, #00bcd4, #f472b6)", WebkitBackgroundClip: "text", color: "transparent" }}>
+            {gifText}
+          </span>
+          {restText}
+        </span>
+      );
+    }
+    return query;
   };
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-lg p-4 w-[600px] flex flex-col transition-all duration-500`}
+      className={`bg-white rounded-lg shadow-lg w-[600px] flex flex-col border border-gray-300`}
       style={{
-        height: selectedGif ? "700px" : showResults ? "400px" : "auto",
+        height: "500px",
       }}
     >
-      {/* Если выбрана гифка, отображаем её сверху */}
+      {/* Если выбрана гифка, отображаем её */}
       {selectedGif && (
-        <div className="mb-4 flex justify-center animate-slide-up relative">
+        <div className="m-4 flex justify-down animate-slide-up relative">
           <img
             src={selectedGif.images.fixed_height.url}
             alt={selectedGif.title}
-            className="rounded-md shadow-md w-[150px] h-auto"
+            className="rounded-md shadow-md"
+            style={{
+              maxWidth: "180%",
+              height: "180%",
+            }}
           />
-          <button
-            onClick={() => setSelectedGif(null)}
-            className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1"
-          >
-            ✕
-          </button>
+
+          <div className="ml-2 text-right text-gray-400 text-sm">
+            <div className=" text-bottom-right text-gray-400 text-sm">
+              {sentTime}
+            </div>
+          </div>
         </div>
       )}
 
-      {selectedGif && <div className="border-b border-gray-300 mb-4"></div>}
-
       {/* Сетка GIF */}
-      {showResults && (
+      {showResults && !selectedGif && (
         <div
-          className="grid gap-2 overflow-y-auto flex-1"
+          className="flex flex-wrap gap-2 overflow-y-auto flex-1 justify-start m-2"
           style={{
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gridAutoFlow: "row dense",
-            justifyContent: "center",
-            alignContent: "start",
+            alignContent: "start", // Выравнивание по верхнему краю
           }}
         >
-          {gifs.map((gif, index) => (
-            <img
-              key={`${gif.id}-${index}`} // Уникальные ключи
-              src={gif.images.fixed_height.url}
-              alt={gif.title}
-              className="rounded-md shadow-sm transition-transform transform hover:scale-105 cursor-pointer"
-              onClick={() => handleGifClick(gif)}
-              style={{
-                maxWidth: "150px",
-                height: "auto",
-              }}
-            />
-          ))}
+          {gifs.length > 0 ? (
+            gifs.map((gif) => (
+              <img
+                key={gif.id}
+                src={gif.images.fixed_height.url}
+                alt={gif.title}
+                className="rounded-md shadow-sm transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer m-2"
+                onClick={() => handleGifClick(gif)} // Обработчик клика
+                style={{
+                  flex: "1 1 auto", // Элементы гибко растягиваются
+                  maxWidth: "auto", // Устанавливаем максимальную ширину
+                  height: "auto", // Сохраняем пропорции
+                }}
+              />
+            ))
+          ) : (
+            <p className="flex justify-right">Нет результатов для поиска.</p>
+          )}
         </div>
       )}
 
       {/* Кнопка "Показать больше" */}
-      {showResults && !loading && (
+      {showResults && !loading && !selectedGif && (
         <button
           onClick={handleShowMore}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
+          className="m-3 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
         >
           Показать больше
         </button>
@@ -124,16 +151,56 @@ export default function GifSearch() {
       {/* Если загрузка, показываем индикатор */}
       {loading && <p className="text-center mt-4">Загрузка...</p>}
 
+      {/* Закрепленная разделительная полоса */}
+      <div className="w-full h-1 bg-gray-300 fixed bottom-[56px]" style={{ left: "0" }}></div>
+
       {/* Часть с поиском */}
-      <div className="bg-pink-200 p-4 rounded-lg mt-4">
+      <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full" style={{ left: "0" }}>
         <input
           type="text"
-          placeholder="Type /gif to search"
+          placeholder="Напишите сообщение"
           value={query}
-          onChange={handleQueryChange} // Используем новый обработчик
-          className="border border-gray-300 rounded-lg p-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-500 w-full"
+          onChange={handleQueryChange}
+          className="border border-gray-300 rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
         />
       </div>
+
+      <style jsx>{`
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 8px;
+          border-radius: 10px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background-color: #999;
+          border-radius: 10px;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background-color: #555;
+        }
+
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+
+        /* Анимация перемещения гифки вверх */
+        @keyframes slide-up {
+          0% {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          100% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+
+        .animate-slide-up {
+          animation: slide-up 0.5s ease-in-out forwards;
+        }
+      `}</style>
     </div>
   );
 }
