@@ -91,24 +91,25 @@ export default function GifSearch() {
       {/* Если выбрана гифка, отображаем её */}
       {selectedGif && (
         <div className="m-4 flex justify-down animate-slide-up relative">
+          
           <img
             src={selectedGif.images.fixed_height.url}
             alt={selectedGif.title}
             className="rounded-md shadow-md"
             style={{
-              maxWidth: "180%",
-              height: "180%",
+              maxWidth: "500px",
+              height: "400px",
             }}
           />
 
-          <div className="ml-2 text-right text-gray-400 text-sm">
+          
             <div className=" text-bottom-right text-gray-400 text-sm">
               {sentTime}
             </div>
-          </div>
+          
         </div>
       )}
-
+      
       {/* Сетка GIF */}
       {showResults && !selectedGif && (
         <div
@@ -127,8 +128,8 @@ export default function GifSearch() {
                 onClick={() => handleGifClick(gif)} // Обработчик клика
                 style={{
                   flex: "1 1 auto", // Элементы гибко растягиваются
-                  maxWidth: "150px", // Устанавливаем максимальную ширину
-                  height: "100px", // Сохраняем пропорции
+                  maxWidth: "200px", // Устанавливаем максимальную ширину
+                  height: "150px", // Сохраняем пропорции
                 }}
               />
             ))
@@ -151,8 +152,6 @@ export default function GifSearch() {
       {/* Если загрузка, показываем индикатор */}
       {loading && <p className="text-center mt-4">Загрузка...</p>}
 
-      {/* Закрепленная разделительная полоса */}
-      <div className="w-full h-1 bg-gray-300 fixed bottom-[56px]" style={{ left: "0" }}></div>
 
       {/* Часть с поиском */}
       <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full" style={{ left: "0" }}>
@@ -161,6 +160,7 @@ export default function GifSearch() {
           placeholder="Напишите сообщение..."
           value={query}
           onChange={handleQueryChange}
+          style={{ borderRadius: "6px"}}
           className="border border-gray-300 rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
         />
       </div>
