@@ -123,12 +123,12 @@ export default function GifSearch() {
                 key={gif.id}
                 src={gif.images.fixed_height.url}
                 alt={gif.title}
-                className="rounded-md shadow-sm transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer m-2"
+                className="rounded-md shadow-sm transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer m-1"
                 onClick={() => handleGifClick(gif)} // Обработчик клика
                 style={{
                   flex: "1 1 auto", // Элементы гибко растягиваются
-                  maxWidth: "auto", // Устанавливаем максимальную ширину
-                  height: "auto", // Сохраняем пропорции
+                  maxWidth: "150px", // Устанавливаем максимальную ширину
+                  height: "100px", // Сохраняем пропорции
                 }}
               />
             ))
@@ -158,7 +158,7 @@ export default function GifSearch() {
       <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full" style={{ left: "0" }}>
         <input
           type="text"
-          placeholder="Напишите сообщение"
+          placeholder="Напишите сообщение..."
           value={query}
           onChange={handleQueryChange}
           className="border border-gray-300 rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
