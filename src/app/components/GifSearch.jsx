@@ -81,26 +81,31 @@ export default function GifSearch() {
   const renderQueryText = (query) => {
     // Проверяем, начинается ли текст с "/gif"
     if (query.startsWith("/gif")) {
-      const gifText = query.slice(0, 5); // "/gif"
-      const restText = query.slice(5); // Остальной текст
+      const gifText = query.slice(0, 4); // "/gif"
+      const restText = query.slice(4); // Остальной текст
       return (
         <span>
-          <span style={{ 
-            background: "linear-gradient(to right, #00bcd4, #f472b6)", 
-            WebkitBackgroundClip: "text", 
-            color: "transparent" 
-          }}>
+          <span
+            style={{
+              background: "linear-gradient(to right, #00bcd4, #f472b6)",
+              WebkitBackgroundClip: "text",
+              color: "transparent",
+            }}
+          >
             {gifText}
           </span>
-          {restText}
+          <span style={{ color: "black" }}>{restText}</span>
         </span>
       );
     }
-    return query;
+    // Если текст не содержит "/gif", отображаем его черным
+    return <span style={{ color: "black" }}>{query}</span>;
   };
 
   return (
     <div className="bg-white rounded-lg shadow-lg w-[700px] flex flex-col border border-gray-300" style={{ height: "600px" }}>
+      
+
       {/* Если выбрана гифка, отображаем её */}
       {selectedGif && (
         <div className="m-4 flex justify-down animate-slide-up relative">
@@ -122,15 +127,15 @@ export default function GifSearch() {
         <div
           className="flex flex-wrap gap-2 overflow-y-auto flex-1 justify-start"
           style={{
-            marginTop: "22px",    // Отступ сверху
-            marginLeft: "16px",   // Отступ слева
-            marginRight: "16px",  // Отступ справа
+            marginTop: "22px", // Отступ сверху
+            marginLeft: "16px", // Отступ слева
+            marginRight: "16px", // Отступ справа
             padding: "5px",
             alignContent: "start",
             maxHeight: gifContainerHeight,
             overflowY: "auto",
             border: "1.5px solid #e5e7eb", // Граница вокруг контейнера
-            borderRadius: "1px",  // Скругленные углы контейнера
+            borderRadius: "1px", // Скругленные углы контейнера
           }}
           onScroll={handleScroll} // Обработчик прокрутки
         >
@@ -147,7 +152,7 @@ export default function GifSearch() {
                   maxWidth: "200px", // Устанавливаем максимальную ширину
                   height: "150px", // Сохраняем пропорции
                   margin: "5px",
-                  marginRight: "0px"
+                  marginRight: "0px",
                 }}
               />
             ))
@@ -156,63 +161,36 @@ export default function GifSearch() {
           )}
         </div>
       )}
-
       {/* Если загрузка, показываем индикатор */}
       {loading && <p className="text-center mt-4">Загрузка...</p>}
-
       {/* Часть с поиском */}
-      <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full" style={{ padding: "13px 16px" }}>
+      <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full">
         <div className="relative">
-          {/* Основное поле ввода */}
+          {/* Поле ввода */}
           <input
             type="text"
-            placeholder="Напишите сообщение..."
             value={query}
             onChange={handleQueryChange}
             onKeyDown={handleKeyDown}
-            className="border border-gray-300 rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
+            placeholder="Введите текст..."
+            className="w-full border border-gray-300 rounded-lg p-3 text-transparent focus:outline-none focus:ring-2 focus:ring-gray-300"
             style={{
-              borderRadius: "6px",
-              padding: "13px 16px",
               background: "transparent", // Прозрачный фон
-              color: "transparent", // Текст будет прозрачным, чтобы не мешал наложенный градиент
-              paddingLeft: query.startsWith("/gif") ? "40px" : "16px", // Сдвиг текста после "/gif"
+              color: "transparent", // Текст скрыт
             }}
           />
 
-          {/* Если запрос начинается с "/gif", показываем градиент для "/gif" */}
-          {query.startsWith("/gif") && (
-            <span
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "10px", // Расположим в начале
-                transform: "translateY(-50%)",
-                background: "linear-gradient(to right, #00bcd4, #f472b6)", // Градиент для "/gif"
-                WebkitBackgroundClip: "text", // Применяем градиент
-                color: "transparent", // Прозрачный цвет для текста
-              }}
-            >
-              /gif
-            </span>
-          )}
-
-          {/* Основная часть текста (оставшаяся часть запроса) после "/gif", который отображается черным */}
-          {query.startsWith("/gif") && (
-            <span
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "40px", // Сдвигаем текст, если есть "/gif"
-                transform: "translateY(-50%)",
-                color: "black", // Черный цвет для остальной части текста
-              }}
-            >
-              {query.slice(5)} {/* Отображаем текст после "/gif" */}
-            </span>
-          )}
+          {/* Отображение текста */}
+          <div
+            className="absolute top-1/2 left-3 transform -translate-y-1/2 pointer-events-none"
+            style={{ whiteSpace: "nowrap" }}
+          >
+            {renderQueryText(query)}
+          </div>
         </div>
       </div>
+
+      
 
       <style jsx>{`
         .overflow-y-auto::-webkit-scrollbar {
