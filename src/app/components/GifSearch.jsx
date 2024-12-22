@@ -12,33 +12,23 @@ export default function GifSearch() {
   const [loading, setLoading] = useState(false); // Состояние загрузки
   const [sentTime, setSentTime] = useState(null); // Время отправки
   const [isChatMode, setIsChatMode] = useState(false); // Режим чата
+  const [gifContainerHeight, setGifContainerHeight] = useState("100px"); // Начальная высота контейнера для гифок
 
-  // Загрузка гифок при изменении запроса или смещения
-  useEffect(() => {
-    const fetchGifs = async () => {
-      if (query.startsWith("/gif ")) {
-        const searchTerm = query.slice(5);
-        setLoading(true);
+  const gifsPerPage = 20; // Количество гифок на страницу (можно настроить)
 
-        const results = await searchGifs(searchTerm, offset);
-
-        if (offset === 0) {
-          setGifs(results);
-        } else {
-          setGifs((prevGifs) => [...prevGifs, ...results]);
-        }
-
-        setLoading(false);
-        setShowResults(true);
-      } else {
-        setShowResults(false);
-        setGifs([]);
-        setOffset(0);
-      }
-    };
-
-    fetchGifs();
-  }, [query, offset]);
+  // Загрузка гифок
+  const fetchGifs = async (searchTerm, pageOffset = 0) => {
+    setLoading(true);
+    const results = await searchGifs(searchTerm, pageOffset);
+    if (pageOffset === 0) {
+      setGifs(results); // Загружаем новые результаты
+    } else {
+      setGifs((prevGifs) => [...prevGifs, ...results]); // Добавляем новые гифки к существующим
+    }
+    setLoading(false);
+    setShowResults(true);
+    setGifContainerHeight("calc(100% - 60px)"); // Увеличиваем высоту контейнера для гифок после загрузки
+  };
 
   // Обработчик клика по гифке
   const handleGifClick = (gif) => {
@@ -49,29 +39,57 @@ export default function GifSearch() {
     setQuery(""); // Очищаем строку поиска
   };
 
-  // Обработчик кнопки "Показать больше"
-  const handleShowMore = () => {
-    setOffset((prevOffset) => prevOffset + 9);
+  // Обработчик нажатия Enter
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && query.startsWith("/gif ")) {
+      const searchTerm = query.slice(5); // Извлекаем текст после "/gif "
+      setOffset(0); // Сбрасываем смещение на первую страницу
+      setGifs([]); // Очищаем предыдущие результаты
+      fetchGifs(searchTerm); // Загружаем первую страницу
+      setShowResults(true); // Показываем окно с результатами
+    }
   };
 
   // При изменении запроса сбрасываем гифки и смещение
   const handleQueryChange = (e) => {
     setQuery(e.target.value);
-    setGifs([]);
-    setOffset(0);
+    setGifs([]); // Очищаем гифки
+    setOffset(0); // Сбрасываем смещение
     setSelectedGif(null);
     setSentTime(null);
-    setIsChatMode(false); // Сбрасываем режим чата, если пользователь снова ищет гифки
+    setIsChatMode(false); // Сбрасываем режим чата
+    setGifContainerHeight("100px"); // Возвращаем начальную высоту контейнера
   };
+
+  // Обработчик прокрутки (для бесконечного скроллинга)
+  const handleScroll = (e) => {
+    const container = e.target;
+    // Проверяем, достигли ли мы конца контейнера с небольшим запасом (10% от высоты)
+    if (container.scrollHeight - container.scrollTop <= container.clientHeight * 1.1 && !loading) {
+      setOffset((prevOffset) => prevOffset + gifsPerPage); // Загружаем дополнительные гифки
+    }
+  };
+
+  // Загружаем гифки при изменении смещения
+  useEffect(() => {
+    if (offset > 0 || query.startsWith("/gif ")) {
+      const searchTerm = query.slice(5); // Извлекаем текст после "/gif "
+      fetchGifs(searchTerm, offset);
+    }
+  }, [offset]);
 
   const renderQueryText = (query) => {
     // Проверяем, начинается ли текст с "/gif"
     if (query.startsWith("/gif")) {
       const gifText = query.slice(0, 5); // "/gif"
-      const restText = query.slice(4); // Остальной текст
+      const restText = query.slice(5); // Остальной текст
       return (
         <span>
-          <span style={{ background: "linear-gradient(to right, #00bcd4, #f472b6)", WebkitBackgroundClip: "text", color: "transparent" }}>
+          <span style={{ 
+            background: "linear-gradient(to right, #00bcd4, #f472b6)", 
+            WebkitBackgroundClip: "text", 
+            color: "transparent" 
+          }}>
             {gifText}
           </span>
           {restText}
@@ -82,41 +100,39 @@ export default function GifSearch() {
   };
 
   return (
-    <div
-      className={`bg-white rounded-lg shadow-lg w-[600px] flex flex-col border border-gray-300`}
-      style={{
-        height: "500px",
-      }}
-    >
+    <div className="bg-white rounded-lg shadow-lg w-[700px] flex flex-col border border-gray-300" style={{ height: "600px" }}>
       {/* Если выбрана гифка, отображаем её */}
       {selectedGif && (
         <div className="m-4 flex justify-down animate-slide-up relative">
-          
           <img
             src={selectedGif.images.fixed_height.url}
             alt={selectedGif.title}
             className="rounded-md shadow-md"
             style={{
-              maxWidth: "500px",
-              height: "400px",
+              maxWidth: "600px",
+              height: "500px",
             }}
           />
-
-          
-            <div className=" text-bottom-right text-gray-400 text-sm">
-              {sentTime}
-            </div>
-          
+          <div className=" text-bottom-right text-gray-400 text-sm">{sentTime}</div>
         </div>
       )}
-      
+
       {/* Сетка GIF */}
       {showResults && !selectedGif && (
         <div
-          className="flex flex-wrap gap-2 overflow-y-auto flex-1 justify-start m-2"
+          className="flex flex-wrap gap-2 overflow-y-auto flex-1 justify-start"
           style={{
-            alignContent: "start", // Выравнивание по верхнему краю
+            marginTop: "22px",    // Отступ сверху
+            marginLeft: "16px",   // Отступ слева
+            marginRight: "16px",  // Отступ справа
+            padding: "5px",
+            alignContent: "start",
+            maxHeight: gifContainerHeight,
+            overflowY: "auto",
+            border: "1.5px solid #e5e7eb", // Граница вокруг контейнера
+            borderRadius: "1px",  // Скругленные углы контейнера
           }}
+          onScroll={handleScroll} // Обработчик прокрутки
         >
           {gifs.length > 0 ? (
             gifs.map((gif) => (
@@ -124,12 +140,14 @@ export default function GifSearch() {
                 key={gif.id}
                 src={gif.images.fixed_height.url}
                 alt={gif.title}
-                className="rounded-md shadow-sm transition-transform transform hover:scale-105 hover:shadow-xl cursor-pointer m-1"
+                className="rounded-md shadow-sm transition-transform transform hover:shadow-xl cursor-pointer"
                 onClick={() => handleGifClick(gif)} // Обработчик клика
                 style={{
                   flex: "1 1 auto", // Элементы гибко растягиваются
                   maxWidth: "200px", // Устанавливаем максимальную ширину
                   height: "150px", // Сохраняем пропорции
+                  margin: "5px",
+                  marginRight: "0px"
                 }}
               />
             ))
@@ -139,30 +157,61 @@ export default function GifSearch() {
         </div>
       )}
 
-      {/* Кнопка "Показать больше" */}
-      {showResults && !loading && !selectedGif && (
-        <button
-          onClick={handleShowMore}
-          className="m-3 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition"
-        >
-          Показать больше
-        </button>
-      )}
-
       {/* Если загрузка, показываем индикатор */}
       {loading && <p className="text-center mt-4">Загрузка...</p>}
 
-
       {/* Часть с поиском */}
-      <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full" style={{ left: "0" }}>
-        <input
-          type="text"
-          placeholder="Напишите сообщение..."
-          value={query}
-          onChange={handleQueryChange}
-          style={{ borderRadius: "6px"}}
-          className="border border-gray-300 rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
-        />
+      <div className="mt-auto bg-gray-50 border-t border-gray-200 p-4 w-full" style={{ padding: "13px 16px" }}>
+        <div className="relative">
+          {/* Основное поле ввода */}
+          <input
+            type="text"
+            placeholder="Напишите сообщение..."
+            value={query}
+            onChange={handleQueryChange}
+            onKeyDown={handleKeyDown}
+            className="border border-gray-300 rounded-lg p-3 text-black focus:outline-none focus:ring-2 focus:ring-gray-300 w-full"
+            style={{
+              borderRadius: "6px",
+              padding: "13px 16px",
+              background: "transparent", // Прозрачный фон
+              color: "transparent", // Текст будет прозрачным, чтобы не мешал наложенный градиент
+              paddingLeft: query.startsWith("/gif") ? "40px" : "16px", // Сдвиг текста после "/gif"
+            }}
+          />
+
+          {/* Если запрос начинается с "/gif", показываем градиент для "/gif" */}
+          {query.startsWith("/gif") && (
+            <span
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "10px", // Расположим в начале
+                transform: "translateY(-50%)",
+                background: "linear-gradient(to right, #00bcd4, #f472b6)", // Градиент для "/gif"
+                WebkitBackgroundClip: "text", // Применяем градиент
+                color: "transparent", // Прозрачный цвет для текста
+              }}
+            >
+              /gif
+            </span>
+          )}
+
+          {/* Основная часть текста (оставшаяся часть запроса) после "/gif", который отображается черным */}
+          {query.startsWith("/gif") && (
+            <span
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "40px", // Сдвигаем текст, если есть "/gif"
+                transform: "translateY(-50%)",
+                color: "black", // Черный цвет для остальной части текста
+              }}
+            >
+              {query.slice(5)} {/* Отображаем текст после "/gif" */}
+            </span>
+          )}
+        </div>
       </div>
 
       <style jsx>{`
@@ -185,7 +234,6 @@ export default function GifSearch() {
           border-radius: 10px;
         }
 
-        /* Анимация перемещения гифки вверх */
         @keyframes slide-up {
           0% {
             transform: translateY(20px);
